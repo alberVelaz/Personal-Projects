@@ -1,28 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define BOOL int
-#define TRUE 0
-#define FALSE 1
-#define NUMBER 4
-#define PLAYER 0
-#define SHORE 2
+#include <time.h>
+#include "Riddle.h"
 
-/*
-0 -> Boatman
-
-1 -> Goat
-
-2-> cabbage
-
-3-> Wolf
-*/
-
-typedef struct _Riddle {
-    int shore[SHORE][NUMBER];
-    int position;
-    int flag;
-} Riddle;
 
 Riddle* create_riddle(void){
 
@@ -41,9 +22,25 @@ Riddle* create_riddle(void){
 
     r->position = 0;
     r->flag = 0;
-
+    shuffle_shore(r);
     return r;
 
+}
+
+void swap(int *a, int *b) {
+    int temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+void shuffle_shore(Riddle * r){
+    srand(time(NULL));
+    int i;
+    for(i = NUMBER-1; i > 0; i--) {
+        int j = rand() % (i+1);
+        swap(&r->shore[r->position][i], &r->shore[r->position][j]);
+
+    }
 }
 
 void destroy_riddle(Riddle * r){
@@ -65,7 +62,7 @@ int get_other_shore(int pos){
 
 }
 
-char * get_animal(int val){
+char * get_item(int val){
     switch(val){
         case 0:
             return "Boatman";
@@ -78,9 +75,8 @@ char * get_animal(int val){
         default:
             return " ";
     }
-
-
 }
+
 BOOL game_succes(Riddle * r){
     int total=0,i;
 
@@ -101,13 +97,26 @@ return FALSE;
 
 }
 
+int get_position_player(Riddle * r){
+    int i,pos=0;
+
+    for(i=0;i<NUMBER;i++){
+        if(!strcmp(get_item(r->shore[r->position][i]),"Boatman")){
+            pos=i;
+        }
+    }
+
+    return pos;
+}
+
 BOOL cross_shore(Riddle* r){
     if(r==NULL){
         return FALSE;
     }
 
-    r->shore[get_other_shore(r->position)][PLAYER] = r->shore[r->position][PLAYER];
-    r->shore[r->position][PLAYER] = -1;
+    int pos_player = get_position_player(r);
+    r->shore[get_other_shore(r->position)][pos_player] = r->shore[r->position][pos_player];
+    r->shore[r->position][pos_player] = -1;
     r->position = get_other_shore(r->position);
 
 
@@ -120,7 +129,7 @@ BOOL move_animal(int animal,Riddle* r){
         return FALSE;
     }
 
-    if(r->shore[r->position][animal]!=-1 && strcmp(get_animal(r->shore[r->position][animal]),"Boatman")!=0){
+    if(r->shore[r->position][animal]!=-1 && strcmp(get_item(r->shore[r->position][animal]),"Boatman")!=0){
             r->shore[get_other_shore(r->position)][animal] = r->shore[r->position][animal];
             r->shore[r->position][animal] = -1;
         }
@@ -159,7 +168,7 @@ void print_options(Riddle *r){
     int i;
     char* anim;
     for(i = 0; i<NUMBER;i++){
-        anim = get_animal(r->shore[r->position][i]);
+        anim = get_item(r->shore[r->position][i]);
         if(strcmp(anim," ")){
             printf("%d - %s\n",i+1,anim);
         }
@@ -174,12 +183,12 @@ void print_game(Riddle * r){
     printf("--It is on the shore %d-- \n\n",r->position + 1);
     printf("::::::SHORE 1:::::::\n\n");
     for(i=0; i < NUMBER;i++){
-        printf("%s\n",get_animal(r->shore[0][i]));
+        printf("%s\n",get_item(r->shore[0][i]));
     }
     printf("\n");
     printf("::::::SHORE 2:::::::\n\n");
     for(i=0;i < NUMBER;i++){
-        printf("%s\n",get_animal(r->shore[1][i]));
+        printf("%s\n",get_item(r->shore[1][i]));
     }
 
     printf("\n");
@@ -189,38 +198,6 @@ void print_game(Riddle * r){
 
 }
 
-int main()
-{
 
-    int inp_use;
-    printf("Welcome to \'The riddle of the wolf, the goat and the cabbage\'\n\n");
 
-    Riddle * game = create_riddle();
-
-   do{
-        print_game(game);
-        printf("Select one of the following options\n");
-        printf("1 - Cross river\n");
-        printf("2 - Move item to the other shore\n");
-        printf("Input:");
-        scanf("%d",&inp_use);
-        if(inp_use == 1){
-            cross_shore(game);
-        }else{
-                printf("Select which item you want to move from the list of available:");
-                scanf("%d",&inp_use);
-                move_animal(inp_use-1,game);
-        }
-       system("cls");
-    }while(game_failure(game)==FALSE && game_succes(game)==FALSE);
-
-    if(game->flag==1){
-        printf("You have solved the riddle!!");
-    }else{
-        printf("You haven't managed to solve the riddle..");
-    }
-    destroy_riddle(game);
-
-    return 0;
-   }
 
